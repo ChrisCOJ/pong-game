@@ -5,11 +5,13 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
+using key = sf::Keyboard::Key;
 
 class Paddle {
 private:
     sf::RectangleShape shape;
     float x;
+    float speed = 200.f;
 public:
     Paddle(float width, float height, float x, float y) {
         this->x = x;
@@ -22,6 +24,26 @@ public:
         shape.setPosition({this->x, y});  // Fix paddle on the x-axis
     }
     sf::RectangleShape getShape() const {return shape;}
+
+    // Movement Handling
+    void move(float const dt, int const playerNumber) {
+        if (playerNumber == 1) {
+            if (isKeyPressed(key::S)) {
+                shape.move({0, speed * dt});
+            } else if (isKeyPressed(key::W)) {
+                shape.move({0, speed * dt * -1.f});
+            }
+        } else if (playerNumber == 2) {
+            if (isKeyPressed(key::Down)) {
+                shape.move({0, speed * dt});
+            } else if (isKeyPressed(key::Up)) {
+                shape.move({0, speed * dt * -1.f});
+            }
+        }
+        else {
+            throw std::invalid_argument("Invalid playerNumber argument. Must be either 1 or 2!");
+        }
+    }
 };
 
 
@@ -78,25 +100,28 @@ int main()
 
     // Game loop
     while (window.isOpen()) {
-        // Event loop
+        // -------------------- Event loop --------------------
         while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
-            // Paddle movement handling ...
         }
+        // ---------------------------------------------------- !
+        window.clear();
+
         // Set deltaTime
         sf::Time deltaTime = clock.restart();
         const float dt = deltaTime.asSeconds();  // Time elapsed since last frame in seconds
 
-
+        // Movement
+        paddle1.move(dt, 1);
+        paddle2.move(dt, 2);
         // ---------------------- Collision detection ----------------------
         // - Figure out the point on the paddles closest to the ball
         // - Check the distance between that point and the center of the ball
-        // - If the distance is smaller than the ball radius, multiply BALL_MOV_SPEED by -1 to change its movement direction (temporary logic)
+        // - If the distance is smaller than the ball radius, multiply BALL_MOV_SPEED by -1 to change its
+        // movement direction (temporary logic)
         // ----------------------------------------------------------------- !
-
-        window.clear();
 
         // ------------ Update position of objects ------------
         ball.move(-dt, 0);
