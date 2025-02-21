@@ -3,26 +3,34 @@
 // (resolution.y/2.f) - height/2.f
 
 #include <iostream>
+#include <future>
 #include <SFML/Graphics.hpp>
 
+
+constexpr sf::Vector2u RESOLUTION = { 800, 600 };
+static std::mutex mutex;
+int fps = 0;
+float dt = 0.f;
+std::atomic running = true;
+
 using key = sf::Keyboard::Key;
+
 
 class Paddle {
 private:
     sf::RectangleShape shape;
-    float x;
+    // float x;
     float speed = 200.f;
 public:
     Paddle(float width, float height, float x, float y) {
-        this->x = x;
+        // this->x = x;
         shape.setSize({width, height});
-        shape.setFillColor(sf::Color(255, 255, 255));
         shape.setPosition({x, y});
+        shape.setFillColor(sf::Color(255, 255, 255));
     }
 
-    void setPosition(float y) {
-        shape.setPosition({this->x, y});  // Fix paddle on the x-axis
-    }
+    void setPosition(float x, float y) {shape.setPosition({x, y});}  // Fix paddle on the x-axis
+    sf::Vector2f getPosition() const {return shape.getPosition();}
     sf::RectangleShape getShape() const {return shape;}
 
     // Movement Handling
@@ -50,7 +58,7 @@ public:
 class Ball {
 private:
     sf::CircleShape shape;
-    float ball_mov_speed = 250.f;
+    float ball_mov_speed = -250.f;
 public:
     explicit Ball(float x, float y, float radius = 8.f) {
         shape.setRadius(radius);
@@ -75,19 +83,26 @@ public:
     }
 };
 
+void getFps() {
+    while (running) {
+        std::lock_guard lock(mutex);
+        if (dt > 0.f) {
+            fps = static_cast<int>(1/dt);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+    }
+}
 
-int main()
-{
+
+int main() {
     // ------------------------------ INIT ------------------------------
     // Variable definitions
     sf::Clock clock;
-    constexpr sf::Vector2u RESOLUTION = { 800, 600 };
-
     // Window
     sf::RenderWindow window(sf::VideoMode(RESOLUTION), "SFML window");
 
     // Paddle objects
-    float constexpr HEIGHT = 80.f;
+    constexpr float HEIGHT = 80.f;
     float constexpr WIDTH = 10.f;
     float constexpr dx = 30.f;  // Padding from the left and right screen borders
     Paddle paddle1(WIDTH, HEIGHT, dx, RESOLUTION.y/2.f - HEIGHT/2.f);
@@ -95,8 +110,20 @@ int main()
 
     // Pong ball
     Ball ball(RESOLUTION.x / 2.f, RESOLUTION.y / 2.f);
+
+    // Declare a font
+    sf::Font font;
+    if (!font.openFromFile("arial.ttf")) {
+        std::cerr << "Failed to load font." << std::endl;
+    }
+
+    sf::Text text(font);
+    text.setCharacterSize(20);
+    text.setFillColor(sf::Color::White);
+    text.setPosition({RESOLUTION.x - 130.f, 30.f});
     // ------------------------------------------------------------------- !
 
+    std::thread fpsThread(getFps);
 
     // Game loop
     while (window.isOpen()) {
@@ -107,35 +134,41 @@ int main()
             }
         }
         // ---------------------------------------------------- !
-        window.clear();
-
         // Set deltaTime
         sf::Time deltaTime = clock.restart();
-        const float dt = deltaTime.asSeconds();  // Time elapsed since last frame in seconds
+        dt = deltaTime.asSeconds();  // Time elapsed since last frame in seconds
+        text.setString(std::to_string(fps) + " FPS");
 
         // Movement
         paddle1.move(dt, 1);
         paddle2.move(dt, 2);
+        ball.move(dt, 0);
+
         // ---------------------- Collision detection ----------------------
-        // - Figure out the point on the paddles closest to the ball
-        // - Check the distance between that point and the center of the ball
-        // - If the distance is smaller than the ball radius, multiply BALL_MOV_SPEED by -1 to change its
-        // movement direction (temporary logic)
+        if (paddle1.getShape().getGlobalBounds().findIntersection(ball.getShape().getGlobalBounds()) ||
+            paddle2.getShape().getGlobalBounds().findIntersection(ball.getShape().getGlobalBounds())) {
+            ball.setMovSpeed(ball.getMovSpeed() * -1);
+        }
+        if ((ball.getPosition().x + ball.getRadius() * 2 > RESOLUTION.x && ball.getMovSpeed() > 0) ||
+            (ball.getPosition().x < 0 && ball.getMovSpeed() < 0)) {
+
+            ball.setMovSpeed(ball.getMovSpeed() * -1);  // Change the ball's movement direction
+        }
         // ----------------------------------------------------------------- !
 
-        // ------------ Update position of objects ------------
-        ball.move(-dt, 0);
-        // ---------------------------------------------------- !
-
-
         // ------------- Draw stuff to the window -------------
+        window.clear();
+
         window.draw(paddle1.getShape());
         window.draw(paddle2.getShape());
         window.draw(ball.getShape());
-        // ---------------------------------------------------- !
+        window.draw(text);
 
         window.display();
+        // ---------------------------------------------------- !
     }
+    running = false;
+    fpsThread.join();
     return 0;
 }
 
