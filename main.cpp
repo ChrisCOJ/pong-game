@@ -19,11 +19,12 @@ using key = sf::Keyboard::Key;
 class Paddle {
 private:
     sf::RectangleShape shape;
-    // float x;
     float speed = 200.f;
+    std::string direction;
+    int playerNumber;
 public:
-    Paddle(float width, float height, float x, float y) {
-        // this->x = x;
+    Paddle(float width, float height, float x, float y, const int playerNumber) {
+        this->playerNumber = playerNumber;
         shape.setSize({width, height});
         shape.setPosition({x, y});
         shape.setFillColor(sf::Color(255, 255, 255));
@@ -32,26 +33,26 @@ public:
     void setPosition(float x, float y) {shape.setPosition({x, y});}  // Fix paddle on the x-axis
     sf::Vector2f getPosition() const {return shape.getPosition();}
     sf::RectangleShape getShape() const {return shape;}
+    std::string getDirection() const {return direction;}
+    int getPlayerNumber() const {return playerNumber;}
 
     // Movement Handling
-    void move(float const dt, int const playerNumber) {
-        if (playerNumber == 1) {
-            if (isKeyPressed(key::S)) {
-                shape.move({0, speed * dt});
-            } else if (isKeyPressed(key::W)) {
-                shape.move({0, speed * dt * -1.f});
-            }
-        } else if (playerNumber == 2) {
-            if (isKeyPressed(key::Down)) {
-                shape.move({0, speed * dt});
-            } else if (isKeyPressed(key::Up)) {
-                shape.move({0, speed * dt * -1.f});
-            }
-        }
-        else {
+    void move(float const dt) {
+        if ((playerNumber == 1 && isKeyPressed(key::S)) ||
+            (playerNumber == 2 && isKeyPressed(key::Down))) {
+            direction = "down";
+            shape.move({0, speed * dt});
+        } else if ((playerNumber == 1 && isKeyPressed(key::W)) ||
+            (playerNumber == 2 && isKeyPressed(key::Up))) {
+            direction = "up";
+            shape.move({0, speed * dt * -1.f});
+        } else if (!isKeyPressed(key::W) && !isKeyPressed(key::Up) && !isKeyPressed(key::Down) && !isKeyPressed(key::S)) {
+            direction = "";
+        } else if (playerNumber != 1 && playerNumber != 2) {
             throw std::invalid_argument("Invalid playerNumber argument. Must be either 1 or 2!");
         }
     }
+
 };
 
 
@@ -59,29 +60,40 @@ class Ball {
 private:
     sf::CircleShape shape;
     float ball_mov_speed = -250.f;
+    std::array<float, 2> movMultiplier = {1, 0};  // x and y axis movement multipliers
 public:
-    explicit Ball(float x, float y, float radius = 8.f) {
+    explicit Ball(float x, float y, const float radius = 8.f) {
         shape.setRadius(radius);
         shape.setPosition({x, y});
     }
 
     // Setters / Getters
-    void setRadius(float radius) {shape.setRadius(radius);}
+    void setRadius(const float radius) {shape.setRadius(radius);}
     float getRadius() const {return shape.getRadius();}
 
     void setPosition(float x, float y) {shape.setPosition({x, y});}
     sf::Vector2f getPosition() const {return shape.getPosition();}
 
-    void setMovSpeed (float speed) {ball_mov_speed = speed;}
+    void setMovSpeed (const float speed) {ball_mov_speed = speed;}
     float getMovSpeed() const {return ball_mov_speed;}
+
+    std::array<float, 2> getMovMultiplier() const {return movMultiplier;}
+    void setMovMultiplier(const float x, const float y) {
+        if (x > 1 || x < -1  || y > 1 || y < -1) {
+            throw std::invalid_argument("Invalid argument range. x and y can range from -1 to 1 inclusive");
+        }
+        movMultiplier[0] = x;
+        movMultiplier[1] = y;
+    }
 
     sf::CircleShape getShape() const {return shape;}
 
     // Functionality
-    void move(float dx, float dy) {
-        shape.move({ball_mov_speed * dx, ball_mov_speed * dy});
+    void move(float const dt) {
+        shape.move({movMultiplier[0] * ball_mov_speed * dt, movMultiplier[1] * ball_mov_speed * dt});
     }
 };
+
 
 void getFps() {
     while (running) {
@@ -105,8 +117,9 @@ int main() {
     constexpr float HEIGHT = 80.f;
     float constexpr WIDTH = 10.f;
     float constexpr dx = 30.f;  // Padding from the left and right screen borders
-    Paddle paddle1(WIDTH, HEIGHT, dx, RESOLUTION.y/2.f - HEIGHT/2.f);
-    Paddle paddle2(WIDTH, HEIGHT, RESOLUTION.x-WIDTH-dx, RESOLUTION.y/2.f - HEIGHT/2.f);
+    Paddle paddle1(WIDTH, HEIGHT, dx, RESOLUTION.y/2.f - HEIGHT/2.f, 1);
+    Paddle paddle2(WIDTH, HEIGHT, RESOLUTION.x-WIDTH-dx, RESOLUTION.y/2.f - HEIGHT/2.f, 2);
+    std::array<Paddle*, 2> paddles = {&paddle1, &paddle2};
 
     // Pong ball
     Ball ball(RESOLUTION.x / 2.f, RESOLUTION.y / 2.f);
@@ -140,21 +153,33 @@ int main() {
         text.setString(std::to_string(fps) + " FPS");
 
         // Movement
-        paddle1.move(dt, 1);
-        paddle2.move(dt, 2);
-        ball.move(dt, 0);
+        ball.move(dt);
 
         // ---------------------- Collision detection ----------------------
-        if (paddle1.getShape().getGlobalBounds().findIntersection(ball.getShape().getGlobalBounds()) ||
-            paddle2.getShape().getGlobalBounds().findIntersection(ball.getShape().getGlobalBounds())) {
-            ball.setMovSpeed(ball.getMovSpeed() * -1);
+        for (Paddle* paddle : paddles) {
+            paddle->move(dt);
+            if (paddle->getShape().getGlobalBounds().findIntersection(ball.getShape().getGlobalBounds())) {
+                if (paddle->getDirection() == "up") {
+                    ball.setMovMultiplier(-ball.getMovMultiplier()[0], 1);
+                } else if (paddle->getDirection() == "down") {
+                    ball.setMovMultiplier(-ball.getMovMultiplier()[0], -1);
+                } else {ball.setMovMultiplier(-ball.getMovMultiplier()[0], ball.getMovMultiplier()[1]);}
+            }
         }
-        if ((ball.getPosition().x + ball.getRadius() * 2 > RESOLUTION.x && ball.getMovSpeed() > 0) ||
-            (ball.getPosition().x < 0 && ball.getMovSpeed() < 0)) {
 
-            ball.setMovSpeed(ball.getMovSpeed() * -1);  // Change the ball's movement direction
+
+        if (ball.getPosition().y + ball.getRadius() * 2 > RESOLUTION.y ||
+            ball.getPosition().y < 0){
+            ball.setMovMultiplier(ball.getMovMultiplier()[0], -ball.getMovMultiplier()[1]);
         }
         // ----------------------------------------------------------------- !
+
+        // // Adjust score
+        // if (ball.getPosition().x + ball.getRadius() * 2 > RESOLUTION.x) {
+        //     return 0;
+        // } else if (ball.getPosition().x < 0) {
+        //     return 0;
+        // }
 
         // ------------- Draw stuff to the window -------------
         window.clear();
