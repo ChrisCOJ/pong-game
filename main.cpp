@@ -130,10 +130,21 @@ int main() {
         std::cerr << "Failed to load font." << std::endl;
     }
 
-    sf::Text text(font);
-    text.setCharacterSize(20);
-    text.setFillColor(sf::Color::White);
-    text.setPosition({RESOLUTION.x - 130.f, 30.f});
+    // Text init
+    sf::Text player1Score(font);
+    int score1 = 0;
+    sf::Text player2Score(font);
+    int score2 = 0;
+    sf::Text fpsCounter(font);
+    player1Score.setCharacterSize(20);
+    player1Score.setFillColor(sf::Color::White);
+    player1Score.setPosition({300.f, 200.f});
+    player2Score.setCharacterSize(20);
+    player2Score.setFillColor(sf::Color::White);
+    player2Score.setPosition({RESOLUTION.x - 300.f, 200.f});
+    fpsCounter.setCharacterSize(20);
+    fpsCounter.setFillColor(sf::Color::White);
+    fpsCounter.setPosition({RESOLUTION.x - 130.f, 30.f});
     // ------------------------------------------------------------------- !
 
     std::thread fpsThread(getFps);
@@ -150,7 +161,9 @@ int main() {
         // Set deltaTime
         sf::Time deltaTime = clock.restart();
         dt = deltaTime.asSeconds();  // Time elapsed since last frame in seconds
-        text.setString(std::to_string(fps) + " FPS");
+        fpsCounter.setString(std::to_string(fps) + " FPS");
+        player1Score.setString(std::to_string(score1));
+        player2Score.setString(std::to_string(score2));
 
         // Movement
         ball.move(dt);
@@ -174,12 +187,17 @@ int main() {
         }
         // ----------------------------------------------------------------- !
 
-        // // Adjust score
-        // if (ball.getPosition().x + ball.getRadius() * 2 > RESOLUTION.x) {
-        //     return 0;
-        // } else if (ball.getPosition().x < 0) {
-        //     return 0;
-        // }
+        // Adjust score
+        if (ball.getPosition().x + ball.getRadius() * 2 > RESOLUTION.x) {
+            score2 += 1;
+            ball.setPosition(RESOLUTION.x/2.f, RESOLUTION.y/2.f);
+            ball.setMovMultiplier(ball.getMovMultiplier()[0], 0);
+
+        } else if (ball.getPosition().x < 0) {
+            score1 += 1;
+            ball.setPosition(RESOLUTION.x/2.f, RESOLUTION.y/2.f);
+            ball.setMovMultiplier(ball.getMovMultiplier()[0], 0);
+        }
 
         // ------------- Draw stuff to the window -------------
         window.clear();
@@ -187,7 +205,9 @@ int main() {
         window.draw(paddle1.getShape());
         window.draw(paddle2.getShape());
         window.draw(ball.getShape());
-        window.draw(text);
+        window.draw(fpsCounter);
+        window.draw(player1Score);
+        window.draw(player2Score);
 
         window.display();
         // ---------------------------------------------------- !
