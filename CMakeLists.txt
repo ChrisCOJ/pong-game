@@ -13,6 +13,12 @@ FetchContent_Declare(SFML
         SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(pong_game_JB main.cpp)
+add_executable(pong_game_JB src/main.cpp
+        src/Ball.cpp
+        include/Ball.h
+        src/Paddle.cpp
+        include/Paddle.h
+        src/Game.cpp
+        include/Game.h)
 
 target_link_libraries(pong_game_JB PRIVATE SFML::Graphics)
