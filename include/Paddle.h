@@ -11,27 +11,27 @@ using key = sf::Keyboard::Key;
 
 class Paddle {
 private:
-    float speed = 200.f;
+    float speed;
     sf::RectangleShape shape;
-    std::string direction;
-    int playerNumber;
+    const std::string controlOptions;
 public:
-    Paddle(float width, float height, int playerNumber);
+    Paddle(float width, float height, float speed, std::string controlOptions);
 
     void setPosition(const float x, const float y) {shape.setPosition({x, y});}
     sf::Vector2f getPosition() const {return shape.getPosition();}
 
     sf::RectangleShape& getShape() {return shape;}
 
-    std::string getDirection() const {return direction;}
+    std::string getControlOptions() const {return controlOptions;}
 
-    int getPlayerNumber() const {return playerNumber;}
+    void setSped(const float speed) {this->speed = speed;}
+    float getSpeed() const {return speed;}
 
     sf::Vector2f getSize() const {return shape.getSize();}
     void setSize(float width, float height) {shape.setSize({width, height});}
 
     // Movement Handling
-    void move(float dt);
+    void move(float dt, const std::string& movDirection, float verticalBounds);
 
 };
 

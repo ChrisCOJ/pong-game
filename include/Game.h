@@ -13,7 +13,6 @@
 
 class Game {
 private:
-    sf::Vector2f windowResolution;
     // Default variables
     float dt = 0;
     int score1 = 0;
@@ -25,6 +24,8 @@ private:
     std::thread fpsThread;
     sf::Font font;
 
+    sf::Vector2f windowResolution;
+    std::vector<int> fpsAveragingList;
     sf::RenderWindow window;
     Paddle paddleLeft;
     Paddle paddleRight;
@@ -38,7 +39,6 @@ private:
     std::vector<sf::Drawable*> objects;
 
     void updateObjects();
-
     static void render(sf::RenderWindow& window, const std::vector<sf::Drawable*>& objects);
     void getFps();
     void loadText();

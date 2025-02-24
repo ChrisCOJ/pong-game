@@ -2,28 +2,29 @@
 // Created by Catalin Cojocaru on 22/02/2025.
 //
 
+#include <utility>
+
 #include "../include/Paddle.h"
 
 
-Paddle::Paddle(const float width, const float height, const int playerNumber)
-    : playerNumber(playerNumber)
+Paddle::Paddle(const float width, const float height, const float speed, std::string controlOptions)
+    : speed(speed),
+      controlOptions(std::move(controlOptions))
 {
     shape.setSize({width, height});
     shape.setFillColor(sf::Color(255, 255, 255));
 }
 
-void Paddle::move(float dt) {
-    if ((playerNumber == 1 && isKeyPressed(key::S)) ||
-    (playerNumber == 2 && isKeyPressed(key::Down))) {
-        direction = "down";
-        shape.move({0, speed * dt});
-    } else if ((playerNumber == 1 && isKeyPressed(key::W)) ||
-        (playerNumber == 2 && isKeyPressed(key::Up))) {
-        direction = "up";
-        shape.move({0, speed * dt * -1.f});
-        } else if (!isKeyPressed(key::W) && !isKeyPressed(key::Up) && !isKeyPressed(key::Down) && !isKeyPressed(key::S)) {
-            direction = "N/A";
-        } else if (playerNumber != 1 && playerNumber != 2) {
-            throw std::invalid_argument("Invalid playerNumber argument. Must be either 1 or 2!");
+void Paddle::move(const float dt, const std::string& movDirection, const float verticalBounds) {
+    // Check if the paddle is within it's vertical bounds, then call move
+    if (!(shape.getPosition().y < 0)) {
+        if (movDirection == "up") {
+            shape.move({0, speed * dt * -1.f});  // Negative y offset to move upwards
         }
+    }
+    if (!(shape.getPosition().y + shape.getSize().y > verticalBounds)) {
+        if (movDirection == "down") {
+            shape.move({0, speed * dt});  // Positive y offset to move downwards
+        }
+    }
 }
