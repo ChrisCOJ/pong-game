@@ -7,21 +7,26 @@
 #include <iostream>
 
 
-Game::Game() :
-    windowResolution(800, 600),
-    window(sf::VideoMode(windowResolution), "Pong Game"),
+Game::Game(const sf::Vector2f windowResolution) :
+    windowResolution(windowResolution),
+    window(sf::VideoMode(static_cast<sf::Vector2u>(windowResolution)), "Pong Game"),
     paddleLeft(10.f, 80.f, 1),
     paddleRight(10.f, 80.f, 2),
-    ball(windowResolution.x / 2.f, windowResolution.y / 2.f),
+    ball(windowResolution.x/2, windowResolution.y / 2.f),
     player1Score(font),
     player2Score(font),
-    fpsCounter(font)
+    fpsCounter(font),
+    objects{&paddleLeft.getShape(), &paddleRight.getShape(), &ball.getShape(),
+            &player1Score, &player2Score, &fpsCounter}
 
 {
+    if (windowResolution.x < 100 || windowResolution.y < 100) {
+        throw std::invalid_argument("Invalid window size, vertical/horizontal axis cannot be smaller than 100 pixels");
+    }
     loadText();
-    paddleLeft.setPosition(30.f, windowResolution.y/2 - paddleLeft.getSize().y);
+    paddleLeft.setPosition(30.f, windowResolution.y/2 - paddleLeft.getSize().y/2);
     paddleRight.setPosition(windowResolution.x - 30 - paddleRight.getSize().x,
-                            windowResolution.y/2 - paddleRight.getSize().y);
+                            windowResolution.y/2 - paddleRight.getSize().y/2);
 }
 
 void Game::loadText() {
@@ -32,17 +37,17 @@ void Game::loadText() {
     player1Score.setFont(font);
     player1Score.setCharacterSize(20);
     player1Score.setFillColor(sf::Color::White);
-    player1Score.setPosition({static_cast<float>(windowResolution.x)/4, 200.f});
+    player1Score.setPosition({windowResolution.x/4, 200.f});
 
     player2Score.setFont(font);
     player2Score.setCharacterSize(20);
     player2Score.setFillColor(sf::Color::White);
-    player2Score.setPosition({static_cast<float>(windowResolution.x - std::floor(windowResolution.x/4)), 200.f});
+    player2Score.setPosition({windowResolution.x - windowResolution.x/4, 200.f});
 
     fpsCounter.setFont(font);
     fpsCounter.setCharacterSize(20);
     fpsCounter.setFillColor(sf::Color::White);
-    fpsCounter.setPosition({30.f, 30.f});
+    fpsCounter.setPosition({windowResolution.x - 100.f, 30.f});
 }
 
 
@@ -56,17 +61,17 @@ void Game::getFps() {
     }
 }
 
-void Game::render() {
-    window.clear();
+void Game::render(sf::RenderWindow& window, const std::vector<sf::Drawable*>& objects) {
+    for (const auto* object : objects) {
+        window.draw(*object);
+    }
+}
 
-    window.draw(paddleLeft.getShape());
-    window.draw(paddleRight.getShape());
-    window.draw(ball.getShape());
-    window.draw(fpsCounter);
-    window.draw(player1Score);
-    window.draw(player2Score);
-
-    window.display();
+void Game::updateObjects() {
+    fpsCounter.setString(std::to_string(fps) + " FPS");
+    player1Score.setString(std::to_string(score1));
+    player2Score.setString(std::to_string(score2));
+    ball.move(dt);
 }
 
 void Game::run() {
@@ -85,12 +90,8 @@ void Game::run() {
         // Set deltaTime
         sf::Time deltaTime = clock.restart();
         dt = deltaTime.asSeconds();  // Time elapsed since last frame in seconds
-        fpsCounter.setString(std::to_string(fps) + " FPS");
-        player1Score.setString(std::to_string(score1));
-        player2Score.setString(std::to_string(score2));
 
-        // Movement
-        ball.move(dt);
+        updateObjects();
 
         // ---------------------- Collision detection ----------------------
         std::array<Paddle*, 2> paddles = { &paddleLeft, &paddleRight };
@@ -114,18 +115,21 @@ void Game::run() {
 
         // Adjust score
         if (ball.getPosition().x + ball.getRadius() * 2 > windowResolution.x) {
-            score2 += 1;
+            score1 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
             ball.setMovMultiplier(ball.getMovMultiplier()[0], 0);
 
         } else if (ball.getPosition().x < 0) {
-            score1 += 1;
+            score2 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
             ball.setMovMultiplier(ball.getMovMultiplier()[0], 0);
         }
 
-        render();
+        window.clear();
+        render(window, objects);
+        window.display();
     }
+
     running = false;
     fpsThread.join();
 }

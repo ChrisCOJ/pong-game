@@ -21,7 +21,7 @@ public:
     void setPosition(const float x, const float y) {shape.setPosition({x, y});}
     sf::Vector2f getPosition() const {return shape.getPosition();}
 
-    sf::RectangleShape getShape() const {return shape;}
+    sf::RectangleShape& getShape() {return shape;}
 
     std::string getDirection() const {return direction;}
 

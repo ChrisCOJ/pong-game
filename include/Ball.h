@@ -29,7 +29,7 @@ public:
     std::array<float, 2> getMovMultiplier() const {return movMultiplier;}
     void setMovMultiplier(float x, float y);
 
-    sf::CircleShape getShape() const {return shape;};
+    sf::CircleShape& getShape() {return shape;};
 
     // Functionality
     void move(float dt);
