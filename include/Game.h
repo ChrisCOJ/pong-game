@@ -19,6 +19,7 @@ private:
     int score2 = 0;
     int fps = 0;
     std::atomic<bool> running = true;
+    std::chrono::time_point<std::chrono::system_clock> collisionTime;
     sf::Clock clock;
     std::mutex mutex;
     std::thread fpsThread;

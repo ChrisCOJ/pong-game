@@ -10,8 +10,8 @@
 Game::Game(const sf::Vector2f windowResolution) :
     windowResolution(windowResolution),
     window(sf::VideoMode(static_cast<sf::Vector2u>(windowResolution)), "Pong Game"),
-    paddleLeft(15.f, 150.f, 350.f, "WASD"),
-    paddleRight(15.f, 150.f, 350.f,"Arrows"),
+    paddleLeft(15.f, 150.f, 500.f, "WASD"),
+    paddleRight(15.f, 150.f, 500.f,"Arrows"),
     ball(windowResolution.x/2, windowResolution.y / 2.f),
     player1Score(font),
     player2Score(font),
@@ -117,14 +117,19 @@ void Game::run() {
                 paddle->move(dt, "up", windowResolution.y);
             }
 
-            // Check if the ball collides with any paddle
+            // -------------- Check if the ball collides with any paddle --------------
             sf::FloatRect paddleBounds = paddle->getShape().getGlobalBounds();
             sf::FloatRect ballBounds = ball.getShape().getGlobalBounds();
 
-            if (paddleBounds.findIntersection(ballBounds)) {
+            auto now = std::chrono::system_clock::now();
+            auto timeDifference = std::chrono::duration_cast<std::chrono::milliseconds>(now - collisionTime);
+
+            if (paddleBounds.findIntersection(ballBounds) && timeDifference.count() >= dt * 5) {
+                ball.setSpeed(ball.getSpeed() + 50.f);
                 std::array<float, 2> range{};
                 // relativeDist calculates the exact part of the paddle the ball collides with
                 const float relativeDist = ball.getPosition().y + ball.getRadius() - paddle->getPosition().y;
+
                 if (ball.getHeadingDirection() == "right") {
                     range = {210.f, 330.f};
                     // Maps the relative position of the ball on the paddle to a valid heading range
@@ -137,26 +142,36 @@ void Game::run() {
                     const float mapPosToHeading = range[1] - (range[1] - range[0])/paddle->getSize().y * relativeDist;
                     ball.setHeading(mapPosToHeading);
                 }
+
+                collisionTime = std::chrono::system_clock::now();
             }
         }
+        // ---------------------------------------------------------------------------!
 
         // Handle ball collision with the ceiling and floor
-        if (ball.getPosition().y + ball.getRadius() * 2 + 1 >= windowResolution.y ||
-                ball.getPosition().y <= 1){
-            if (ball.getHeadingDirection() == "right") {
-                ball.setHeading(180 - ball.getHeading());
-            }
-            else {
-                ball.setHeading(360 + 180 - ball.getHeading());
+        if (ball.getPosition().y + ball.getRadius() * 2 >= windowResolution.y ||
+                ball.getPosition().y <= 0){
+            auto now = std::chrono::system_clock::now();
+            auto timeDifference = std::chrono::duration_cast<std::chrono::milliseconds>(now - collisionTime);
+            if (timeDifference.count() >= dt * 5) {  // If 5 frames have passed since the last collision
+                if (ball.getHeadingDirection() == "right") {
+                    ball.setHeading(180 - ball.getHeading());
+                }
+                else {
+                    ball.setHeading(360 + 180 - ball.getHeading());
+                }
+                collisionTime = std::chrono::system_clock::now();
             }
         }
 
         if (ball.getPosition().x + ball.getRadius() * 2 > windowResolution.x) {
+            ball.setSpeed(500.f);
             score1 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
             ball.setHeading(90);  // 90 deg heading = (->)
 
         } else if (ball.getPosition().x < 0) {
+            ball.setSpeed(500.f);
             score2 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
             ball.setHeading(270);  // 270 deg heading = (<-)

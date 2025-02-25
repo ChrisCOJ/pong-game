@@ -16,7 +16,7 @@ private:
     float yMultiplier;  // Multiply y offset by this when shape.move() is called
 
 public:
-    explicit Ball(float x, float y, float speed = 300.f, float radius = 8.f);
+    explicit Ball(float x, float y, float speed = 500.f, float radius = 8.f);
 
     // Setters / Getters
     void setRadius(const float radius) {shape.setRadius(radius);}
