@@ -30,6 +30,7 @@ Game::Game(const sf::Vector2f windowResolution) :
                             windowResolution.y/2 - paddleRight.getSize().y/2);
 }
 
+
 void Game::loadText() {
     if (!font.openFromFile("arial.ttf")) {
         std::cerr << "Failed to load font." << std::endl;
@@ -74,18 +75,13 @@ void Game::getFps() {
     }
 }
 
+
 void Game::render(sf::RenderWindow& window, const std::vector<sf::Drawable*>& objects) {
     for (const auto* object : objects) {
         window.draw(*object);
     }
 }
 
-void Game::updateObjects() {
-    fpsCounter.setString(std::to_string(fps) + " FPS");
-    player1Score.setString(std::to_string(score1));
-    player2Score.setString(std::to_string(score2));
-    ball.move(dt);
-}
 
 void Game::run() {
     // Calculates fps every 400 ms
@@ -104,7 +100,10 @@ void Game::run() {
         sf::Time deltaTime = clock.restart();
         dt = deltaTime.asSeconds();  // Time elapsed since last frame in seconds
 
-        updateObjects();
+        // Update objects
+        fpsCounter.setString(std::to_string(fps) + " FPS");
+        player1Score.setString(std::to_string(score1));
+        player2Score.setString(std::to_string(score2));
 
         // Paddle Movement
         std::array<Paddle*, 2> paddles = { &paddleLeft, &paddleRight };
@@ -118,34 +117,47 @@ void Game::run() {
                 paddle->move(dt, "up", windowResolution.y);
             }
 
-            // Collision detection with the ball
-            if (paddle->getShape().getGlobalBounds().findIntersection(ball.getShape().getGlobalBounds())) {}
+            // Check if the ball collides with any paddle
+            sf::FloatRect paddleBounds = paddle->getShape().getGlobalBounds();
+            sf::FloatRect ballBounds = ball.getShape().getGlobalBounds();
+            if (paddleBounds.findIntersection(ballBounds)) {
+                const float relativeDist = ball.getPosition().y + ball.getRadius() - paddle->getPosition().y;
+                if (ball.getHeading() > 90 && ball.getHeading() < 270) {
+                    // Set the heading of the ball to the right (->)
+                }
+                else {
+                    // Set the heading of the ball to the left (<-)
+                }
+            }
         }
 
 
-        if (ball.getPosition().y + ball.getRadius() * 2 > windowResolution.y ||
-            ball.getPosition().y < 0){
-            ball.setMovMultiplier(ball.getMovMultiplier()[0], -ball.getMovMultiplier()[1]);
+        if (ball.getPosition().y + ball.getRadius() * 2 + 1 >= windowResolution.y ||
+                ball.getPosition().y <= 1){
+            ball.setHeading(360 - ball.getHeading());
         }
-        // ----------------------------------------------------------------- !
 
-        // Adjust score
         if (ball.getPosition().x + ball.getRadius() * 2 > windowResolution.x) {
             score1 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
-            ball.setMovMultiplier(ball.getMovMultiplier()[0], 0);
+            ball.setHeading(0);
 
         } else if (ball.getPosition().x < 0) {
             score2 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
-            ball.setMovMultiplier(ball.getMovMultiplier()[0], 0);
+            ball.setHeading(180);
         }
 
+        ball.move(dt);
+
+        ///////////////////////////////
         window.clear();
         render(window, objects);
         window.display();
+        ///////////////////////////////
     }
 
+    // Wait for threads to finish execution
     running = false;
     fpsThread.join();
 }

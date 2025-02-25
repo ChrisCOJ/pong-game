@@ -15,6 +15,7 @@ Paddle::Paddle(const float width, const float height, const float speed, std::st
     shape.setFillColor(sf::Color(255, 255, 255));
 }
 
+
 void Paddle::move(const float dt, const std::string& movDirection, const float verticalBounds) {
     // Check if the paddle is within it's vertical bounds, then call move
     if (!(shape.getPosition().y < 0)) {

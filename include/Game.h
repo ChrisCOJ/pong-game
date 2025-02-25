@@ -38,7 +38,6 @@ private:
 
     std::vector<sf::Drawable*> objects;
 
-    void updateObjects();
     static void render(sf::RenderWindow& window, const std::vector<sf::Drawable*>& objects);
     void getFps();
     void loadText();

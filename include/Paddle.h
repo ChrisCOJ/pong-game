@@ -32,9 +32,7 @@ public:
 
     // Movement Handling
     void move(float dt, const std::string& movDirection, float verticalBounds);
-
 };
-
 
 
 #endif //PADDLE_H
