@@ -120,32 +120,46 @@ void Game::run() {
             // Check if the ball collides with any paddle
             sf::FloatRect paddleBounds = paddle->getShape().getGlobalBounds();
             sf::FloatRect ballBounds = ball.getShape().getGlobalBounds();
+
             if (paddleBounds.findIntersection(ballBounds)) {
+                std::array<float, 2> range{};
+                // relativeDist calculates the exact part of the paddle the ball collides with
                 const float relativeDist = ball.getPosition().y + ball.getRadius() - paddle->getPosition().y;
-                if (ball.getHeading() > 90 && ball.getHeading() < 270) {
-                    // Set the heading of the ball to the right (->)
+                if (ball.getHeadingDirection() == "right") {
+                    range = {210.f, 330.f};
+                    // Maps the relative position of the ball on the paddle to a valid heading range
+                    const float mapPosToHeading = range[0] + (range[1] - range[0])/paddle->getSize().y * relativeDist;
+                    ball.setHeading(mapPosToHeading);
                 }
                 else {
-                    // Set the heading of the ball to the left (<-)
+                    range = {30.f, 150.f};
+                    // Maps the relative position of the ball on the paddle to a valid heading range
+                    const float mapPosToHeading = range[1] - (range[1] - range[0])/paddle->getSize().y * relativeDist;
+                    ball.setHeading(mapPosToHeading);
                 }
             }
         }
 
-
+        // Handle ball collision with the ceiling and floor
         if (ball.getPosition().y + ball.getRadius() * 2 + 1 >= windowResolution.y ||
                 ball.getPosition().y <= 1){
-            ball.setHeading(360 - ball.getHeading());
+            if (ball.getHeadingDirection() == "right") {
+                ball.setHeading(180 - ball.getHeading());
+            }
+            else {
+                ball.setHeading(360 + 180 - ball.getHeading());
+            }
         }
 
         if (ball.getPosition().x + ball.getRadius() * 2 > windowResolution.x) {
             score1 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
-            ball.setHeading(0);
+            ball.setHeading(90);  // 90 deg heading = (->)
 
         } else if (ball.getPosition().x < 0) {
             score2 += 1;
             ball.setPosition(windowResolution.x/2.f, windowResolution.y/2.f);
-            ball.setHeading(180);
+            ball.setHeading(270);  // 270 deg heading = (<-)
         }
 
         ball.move(dt);

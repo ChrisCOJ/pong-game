@@ -11,7 +11,7 @@ class Ball {
 private:
     sf::CircleShape shape;
     float speed;
-    float heading;  // Ball heading in degrees. 0 deg = (->) | 90 deg = (↑)
+    float heading;
     float xMultiplier;  // Multiply x offset by this when shape.move() is called
     float yMultiplier;  // Multiply y offset by this when shape.move() is called
 
@@ -30,6 +30,8 @@ public:
 
     float getHeading() const {return heading;}
     void setHeading(float heading);
+
+    std::string getHeadingDirection() const;
 
     sf::CircleShape& getShape() {return shape;};
 
