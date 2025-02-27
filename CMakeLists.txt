@@ -19,6 +19,8 @@ add_executable(pong_game_JB src/main.cpp
         src/Paddle.cpp
         include/Paddle.h
         src/Game.cpp
-        include/Game.h)
+        include/Game.h
+        src/Button.cpp
+        include/Button.h)
 
 target_link_libraries(pong_game_JB PRIVATE SFML::Graphics)

@@ -15,7 +15,7 @@ private:
     sf::RectangleShape shape;
     const std::string controlOptions;
 public:
-    Paddle(float width, float height, float speed, std::string controlOptions);
+    Paddle(float width, float height, float speed, const std::string& controlOptions);
 
     void setPosition(const float x, const float y) {shape.setPosition({x, y});}
     sf::Vector2f getPosition() const {return shape.getPosition();}

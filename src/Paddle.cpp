@@ -7,7 +7,7 @@
 #include "../include/Paddle.h"
 
 
-Paddle::Paddle(const float width, const float height, const float speed, std::string controlOptions)
+Paddle::Paddle(const float width, const float height, const float speed, const std::string& controlOptions)
     : speed(speed),
       controlOptions(std::move(controlOptions))
 {
